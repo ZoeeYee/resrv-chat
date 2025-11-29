@@ -10,3 +10,4 @@ email-validator
 argon2-cffi
 python-dotenv
 firebase-admin
+google-generativeai
