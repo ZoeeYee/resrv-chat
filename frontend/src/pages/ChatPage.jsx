@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
-const API_BASE = "http://localhost:8001";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8001";
 
 export default function ChatPage() {
   const { user, firebaseUser, openAuth } = useAuth();
