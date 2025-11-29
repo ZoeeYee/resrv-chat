@@ -26,7 +26,8 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:5177",
     "https://resrv.vercel.app",
     "https://resrv-frontend.vercel.app",
-    "https://*.vercel.app",  # 支援所有 Vercel 子網域
+    "https://resrv-chat-frontend.vercel.app",
+    "https://resrv-chat-backend.vercel.app",
 ]
 
 app.add_middleware(
