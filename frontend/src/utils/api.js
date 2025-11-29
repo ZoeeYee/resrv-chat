@@ -1,4 +1,5 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+// 移除結尾斜線避免雙斜線問題
+const API_BASE = (import.meta.env.VITE_API_BASE || "http://localhost:8000").replace(/\/$/, "");
 
 export const getToken = () => localStorage.getItem("token") ?? "";
 export const setToken = (t) => localStorage.setItem("token", t);
