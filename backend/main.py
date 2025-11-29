@@ -13,12 +13,12 @@ import chat
 
 app = FastAPI()
 
-ALLOWED_ORIGINS = ["*"]  # 允許所有來源（開發/作業用）
-
+# CORS 設定 - 允許所有來源（作業用）
+# 注意：allow_credentials=True 時不能使用 allow_origins=["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,  # 使用 Bearer token，不需要 credentials
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
