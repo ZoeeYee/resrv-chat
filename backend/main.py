@@ -13,22 +13,7 @@ import chat
 
 app = FastAPI()
 
-ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:5176",
-    "http://localhost:5177",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://127.0.0.1:5175",
-    "http://127.0.0.1:5176",
-    "http://127.0.0.1:5177",
-    "https://resrv.vercel.app",
-    "https://resrv-frontend.vercel.app",
-    "https://resrv-chat-frontend.vercel.app",
-    "https://resrv-chat-backend.vercel.app",
-]
+ALLOWED_ORIGINS = ["*"]  # 允許所有來源（開發/作業用）
 
 app.add_middleware(
     CORSMiddleware,
