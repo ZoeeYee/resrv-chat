@@ -1,0 +1,7 @@
+前端開啟：
+cd E:\InteractiveHW\Resrv\Resrv\frontend
+npm run dev
+
+後端開啟：
+cd E:\InteractiveHW\Resrv\Resrv\backend
+python -m uvicorn main:app --reload --port 8001

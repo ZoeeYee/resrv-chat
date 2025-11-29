@@ -1,0 +1,12 @@
+fastapi
+pydantic
+uvicorn[standard]
+sqlalchemy
+psycopg2-binary
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
+email-validator
+argon2-cffi
+python-dotenv
+firebase-admin

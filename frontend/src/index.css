@@ -1,0 +1,34 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-gray-50 text-gray-800;
+  font-family: 'Inter', sans-serif;
+}
+/* 自定義隱藏水平捲軸 */
+.scrollbar-hide {
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari & Chrome */
+}
+
+/* 隱藏原生日期選擇器的日曆圖示 */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+  position: absolute;
+  right: 8px;
+  width: 20px;
+  height: 100%;
+  z-index: 1;
+}
+input[type="date"]::-webkit-inner-spin-button {
+  display: none;
+  -webkit-appearance: none;
+}
+input[type="date"]::-webkit-clear-button {
+  display: none;
+  -webkit-appearance: none;
+}
