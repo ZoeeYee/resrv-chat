@@ -34,13 +34,21 @@ def init_firebase():
     try:
         # 優先從環境變數讀取（適用於 Vercel 等部署環境）
         firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS")
+        print(f"🔍 FIREBASE_CREDENTIALS 長度: {len(firebase_cred_json) if firebase_cred_json else 0}")
+        
         if firebase_cred_json:
             import json
-            cred_dict = json.loads(firebase_cred_json)
-            cred = credentials.Certificate(cred_dict)
-            firebase_admin.initialize_app(cred)
-            print("✅ Firebase Admin SDK 已初始化（使用環境變數）")
-            return True
+            try:
+                cred_dict = json.loads(firebase_cred_json)
+                print(f"🔍 JSON 解析成功, project_id: {cred_dict.get('project_id', 'N/A')}")
+                cred = credentials.Certificate(cred_dict)
+                firebase_admin.initialize_app(cred)
+                print("✅ Firebase Admin SDK 已初始化（使用環境變數）")
+                return True
+            except json.JSONDecodeError as je:
+                print(f"❌ JSON 解析失敗: {je}")
+                print(f"🔍 JSON 前100字元: {firebase_cred_json[:100] if firebase_cred_json else 'N/A'}")
+                return False
         
         # 嘗試從檔案讀取（本地開發）
         firebase_cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
@@ -50,10 +58,12 @@ def init_firebase():
             print("✅ Firebase Admin SDK 已初始化（使用服務帳號檔案）")
             return True
         
-        print("⚠️  未找到 Firebase 憑證")
+        print("⚠️  未找到 Firebase 憑證 (FIREBASE_CREDENTIALS 和 FIREBASE_CREDENTIALS_PATH 都未設定)")
         return False
     except Exception as e:
         print(f"⚠️  Firebase Admin SDK 初始化失敗: {e}")
+        import traceback
+        traceback.print_exc()
         return False
 
 # 嘗試初始化
