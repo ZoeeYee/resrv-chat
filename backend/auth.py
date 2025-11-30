@@ -21,37 +21,43 @@ ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_MIN = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 
 # 初始化 Firebase Admin SDK
-try:
-    # 優先從環境變數讀取（適用於 Vercel 等部署環境）
-    firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS")
-    if firebase_cred_json:
-        import json
-        try:
+def init_firebase():
+    """確保 Firebase 已初始化"""
+    try:
+        # 檢查是否已初始化
+        firebase_admin.get_app()
+        return True
+    except ValueError:
+        # 尚未初始化，進行初始化
+        pass
+    
+    try:
+        # 優先從環境變數讀取（適用於 Vercel 等部署環境）
+        firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS")
+        if firebase_cred_json:
+            import json
             cred_dict = json.loads(firebase_cred_json)
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
             print("✅ Firebase Admin SDK 已初始化（使用環境變數）")
-        except json.JSONDecodeError:
-            print("⚠️  FIREBASE_CREDENTIALS 環境變數格式錯誤，嘗試其他方式")
-            raise
-    else:
+            return True
+        
         # 嘗試從檔案讀取（本地開發）
         firebase_cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
         if firebase_cred_path and os.path.exists(firebase_cred_path):
             cred = credentials.Certificate(firebase_cred_path)
             firebase_admin.initialize_app(cred)
             print("✅ Firebase Admin SDK 已初始化（使用服務帳號檔案）")
-        else:
-            # 使用預設應用（適用於某些部署環境，如 Google Cloud）
-            try:
-                firebase_admin.initialize_app()
-                print("✅ Firebase Admin SDK 已初始化（使用預設憑證）")
-            except ValueError:
-                # 如果已經初始化過，忽略錯誤
-                print("⚠️  Firebase Admin SDK 可能已初始化或缺少憑證")
-except Exception as e:
-    print(f"⚠️  Firebase Admin SDK 初始化失敗: {e}")
-    print("   將使用傳統 JWT 驗證作為後備")
+            return True
+        
+        print("⚠️  未找到 Firebase 憑證")
+        return False
+    except Exception as e:
+        print(f"⚠️  Firebase Admin SDK 初始化失敗: {e}")
+        return False
+
+# 嘗試初始化
+init_firebase()
 
 pwd = CryptContext(schemes=["argon2"], deprecated="auto")
 print("Hash scheme:", pwd.schemes())
@@ -69,6 +75,13 @@ def create_token(sub: int) -> str:
 
 def verify_firebase_token(token: str) -> dict:
     """驗證 Firebase ID Token"""
+    # 確保 Firebase 已初始化
+    if not init_firebase():
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Firebase 未正確設定"
+        )
+    
     try:
         decoded_token = firebase_auth.verify_id_token(token)
         return decoded_token
