@@ -161,7 +161,8 @@ def current_user(
         
     except HTTPException:
         raise
-    except Exception:
+    except Exception as firebase_error:
+        print(f"🔍 Firebase 驗證錯誤: {firebase_error}")
         # 如果 Firebase 驗證失敗，嘗試傳統 JWT 驗證（後備）
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
@@ -178,10 +179,12 @@ def current_user(
                     detail="未授權"
                 )
             return user
-        except (JWTError, ValueError, TypeError):
+        except (JWTError, ValueError, TypeError) as jwt_error:
+            print(f"🔍 JWT 驗證錯誤: {jwt_error}")
+            # 返回 Firebase 錯誤（因為這是主要驗證方式）
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token 驗證失敗"
+                detail=f"驗證失敗: {str(firebase_error)}"
             )
 
 # Routes
