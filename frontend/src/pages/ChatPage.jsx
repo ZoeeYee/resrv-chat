@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
-// 根據環境自動選擇 API 網址
-const API_BASE = window.location.hostname === "localhost" 
-  ? "http://localhost:8001" 
-  : "https://resrv-chat-backend-ozgabszq8-zoeeyees-projects.vercel.app";
+// 使用環境變數或預設值
+const API_BASE = import.meta.env.VITE_API_BASE || 
+  (window.location.hostname === "localhost" ? "http://localhost:8001" : "https://resrv-chat-backend.vercel.app");
 
 export default function ChatPage() {
   const { user, firebaseUser, openAuth } = useAuth();
