@@ -4,14 +4,11 @@ from typing import List, Optional
 
 import google.generativeai as genai
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
-
-from database import get_db
-from models import User, ChatHistory
-from auth import current_user
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+security = HTTPBearer()
 
 # 設定 Gemini API
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -32,29 +29,36 @@ class ChatResponse(BaseModel):
     ai_response: str
     timestamp: datetime
 
-class ChatHistoryResponse(BaseModel):
-    id: int
+class ChatHistoryItem(BaseModel):
     user_message: str
     ai_response: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
-# 儲存對話歷史（用於 Gemini 上下文）
+# 儲存對話歷史（記憶體中，serverless 環境下每次請求可能會重置）
 conversation_histories = {}
+chat_histories = {}  # 用於儲存聊天記錄
 
-def get_conversation_history(user_id: int) -> list:
-    """取得使用者的對話歷史"""
-    if user_id not in conversation_histories:
-        conversation_histories[user_id] = []
-    return conversation_histories[user_id]
+def verify_token_simple(credentials: HTTPAuthorizationCredentials = Depends(security)) -> str:
+    """簡單驗證 token 並返回 user_id（基於 Firebase UID）"""
+    from auth import init_firebase
+    import firebase_admin
+    from firebase_admin import auth as firebase_auth
+    
+    token = credentials.credentials
+    
+    if not init_firebase():
+        raise HTTPException(status_code=500, detail="Firebase 未正確設定")
+    
+    try:
+        decoded_token = firebase_auth.verify_id_token(token)
+        return decoded_token.get("uid", "anonymous")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"驗證失敗: {str(e)}")
 
 @router.post("/send", response_model=ChatResponse)
 async def send_message(
     request: ChatRequest,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db)
+    user_id: str = Depends(verify_token_simple)
 ):
     """發送訊息給 AI 並取得回覆（需要登入）"""
     if not model:
@@ -65,7 +69,9 @@ async def send_message(
     
     try:
         # 取得對話歷史
-        history = get_conversation_history(user.id)
+        if user_id not in conversation_histories:
+            conversation_histories[user_id] = []
+        history = conversation_histories[user_id]
         
         # 建立對話上下文
         chat = model.start_chat(history=history)
@@ -78,14 +84,14 @@ async def send_message(
         history.append({"role": "user", "parts": [request.message]})
         history.append({"role": "model", "parts": [ai_response]})
         
-        # 儲存到資料庫
-        chat_record = ChatHistory(
-            user_id=user.id,
-            user_message=request.message,
-            ai_response=ai_response
-        )
-        db.add(chat_record)
-        db.commit()
+        # 儲存聊天記錄（記憶體中）
+        if user_id not in chat_histories:
+            chat_histories[user_id] = []
+        chat_histories[user_id].append({
+            "user_message": request.message,
+            "ai_response": ai_response,
+            "created_at": datetime.utcnow()
+        })
         
         return ChatResponse(
             user_message=request.message,
@@ -96,33 +102,34 @@ async def send_message(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI 回覆失敗: {str(e)}")
 
-@router.get("/history", response_model=List[ChatHistoryResponse])
+@router.get("/history")
 async def get_chat_history(
     limit: int = 50,
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db)
+    user_id: str = Depends(verify_token_simple)
 ):
     """取得聊天歷史記錄（需要登入）"""
-    records = db.query(ChatHistory)\
-        .filter(ChatHistory.user_id == user.id)\
-        .order_by(ChatHistory.created_at.desc())\
-        .limit(limit)\
-        .all()
+    if user_id not in chat_histories:
+        return []
     
-    return list(reversed(records))
+    records = chat_histories[user_id][-limit:]
+    return [
+        {
+            "id": idx,
+            "user_message": r["user_message"],
+            "ai_response": r["ai_response"],
+            "created_at": r["created_at"].isoformat()
+        }
+        for idx, r in enumerate(records)
+    ]
 
 @router.delete("/history")
 async def clear_chat_history(
-    user: User = Depends(current_user),
-    db: Session = Depends(get_db)
+    user_id: str = Depends(verify_token_simple)
 ):
     """清除聊天歷史記錄（需要登入）"""
-    # 清除資料庫記錄
-    db.query(ChatHistory).filter(ChatHistory.user_id == user.id).delete()
-    db.commit()
-    
-    # 清除記憶體中的對話歷史
-    if user.id in conversation_histories:
-        conversation_histories[user.id] = []
+    if user_id in conversation_histories:
+        conversation_histories[user_id] = []
+    if user_id in chat_histories:
+        chat_histories[user_id] = []
     
     return {"message": "聊天歷史已清除"}
