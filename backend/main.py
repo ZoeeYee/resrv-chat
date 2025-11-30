@@ -1,6 +1,8 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.responses import Response
+from starlette.middleware.base import BaseHTTPMiddleware
 from dotenv import load_dotenv
 
 # 載入 .env 檔案
@@ -13,16 +15,31 @@ import chat
 
 app = FastAPI()
 
-# CORS 設定 - 允許所有來源（作業用）
-# 注意：allow_credentials=True 時不能使用 allow_origins=["*"]
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=False,  # 使用 Bearer token，不需要 credentials
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+# 自定義 CORS 中間件 - 強制處理所有請求
+class CustomCORSMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # 處理 OPTIONS 預檢請求
+        if request.method == "OPTIONS":
+            return Response(
+                content="",
+                status_code=200,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Max-Age": "86400",
+                }
+            )
+        
+        # 處理正常請求並添加 CORS headers
+        response = await call_next(request)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        return response
+
+# 使用自定義 CORS 中間件
+app.add_middleware(CustomCORSMiddleware)
 
 
 @app.get("/")
