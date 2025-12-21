@@ -68,6 +68,14 @@ def init_firebase():
             print("✅ Firebase Admin SDK 已初始化（使用服務帳號檔案）")
             return True
         
+        # 方法4: 嘗試從當前目錄讀取
+        local_cred_path = "firebase-credentials.json"
+        if os.path.exists(local_cred_path):
+            cred = credentials.Certificate(local_cred_path)
+            firebase_admin.initialize_app(cred)
+            print("✅ Firebase Admin SDK 已初始化（使用本地檔案）")
+            return True
+        
         print("⚠️  未找到 Firebase 憑證")
         return False
     except Exception as e:
