@@ -11,5 +11,3 @@ argon2-cffi
 python-dotenv
 firebase-admin
 google-generativeai
-pinecone
-groq
