@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import PeopleSelect from "./PeopleSelect"; // 引入共用元件
 import restaurants from "../data/restaurants";
 import LoginButton from "./LoginButton";
@@ -38,6 +38,7 @@ function formatZhTW(hhmm) {
 
 export default function Navbar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [people, setPeople] = useState(1);
   const [date, setDate] = useState(() => getTaiwanDateToday());
   const [time, setTime] = useState(() => getTaiwanTimeNow());
@@ -47,6 +48,9 @@ export default function Navbar() {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const timePickerRef = useRef(null);
   const searchRef = useRef(null);
+
+  // 判斷是否在餐廳詳情頁（訂位頁），如果是則隱藏搜尋區塊
+  const isRestaurantDetailPage = location.pathname.startsWith("/restaurant/");
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -86,7 +90,8 @@ export default function Navbar() {
         {/* LOGO */}
         <Link to="/" className="text-[#b22a2a] font-bold text-2xl">Resrv</Link>
 
-        {/* 搜尋區 */}
+        {/* 搜尋區 - 在餐廳詳情頁隱藏，避免與訂位表單混淆 */}
+        {!isRestaurantDetailPage && (
         <div className="flex flex-wrap gap-2 items-center border border-[#b22a2a] rounded-full px-4 py-2 shadow-sm">
           <div className="relative">
             <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 pointer-events-none z-10">📅</span>
@@ -204,6 +209,7 @@ export default function Navbar() {
             開始搜尋
           </button>
         </div>
+        )}
 
         {/* 加入獎勵與登入 */}
         <div className="flex items-center gap-3">

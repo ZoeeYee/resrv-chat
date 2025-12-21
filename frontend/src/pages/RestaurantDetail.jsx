@@ -130,9 +130,9 @@ export default function RestaurantDetail() {
       </div>
 
       {/* 主內容：左側資訊 + 右側訂位卡 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* 左側資訊 */}
-        <div className="md:col-span-2 bg-white rounded-xl shadow p-6">
+        <div className="lg:col-span-3 bg-white rounded-xl shadow p-6">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-[#e4b326]">{"★".repeat(Math.round(rating))}</span>
             <span className="text-gray-700 font-medium">{rating.toFixed(1)} 分</span>
@@ -155,9 +155,22 @@ export default function RestaurantDetail() {
           </div>
         </div>
 
-        {/* 右側訂位卡 */}
-        <aside ref={bookingRef} className="bg-white rounded-xl shadow p-6 h-fit">
-          <h3 className="text-lg font-semibold mb-4">訂位</h3>
+        {/* 右側訂位區塊 */}
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* 已訂位列表 - 放在上方讓使用者更容易看到 */}
+          {bookings.length > 0 && (
+            <div ref={bookingsListRef} className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <span className="text-[#b22a2a]">📋</span> 已訂位
+                <span className="text-sm font-normal text-gray-500">({bookings.length} 筆)</span>
+              </h3>
+              <BookingList items={bookings} onDelete={deleteBooking} onUpdate={updateBooking} />
+            </div>
+          )}
+
+          {/* 訂位卡 */}
+          <aside ref={bookingRef} className="bg-white rounded-xl shadow p-6 h-fit">
+            <h3 className="text-lg font-semibold mb-4">訂位</h3>
           <form
             className="flex flex-col gap-3 mb-4"
             onSubmit={(e) => {
@@ -283,6 +296,7 @@ export default function RestaurantDetail() {
             </div>
           )}
         </aside>
+        </div>
       </div>
 
       {/* 使用者評論 */}
@@ -290,12 +304,6 @@ export default function RestaurantDetail() {
         <h3 className="text-lg font-semibold mb-4">使用者評論</h3>
         <ReviewForm onSubmit={(r) => addReview(restaurantId, r)} />
         <ReviewList items={reviewsMap[restaurantId] || []} restaurantId={restaurantId} onDelete={deleteReview} onUpdate={updateReview} />
-      </div>
-
-      {/* 已訂位列表 */}
-      <div ref={bookingsListRef} className="mt-8 bg-white rounded-xl shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">已訂位</h3>
-        <BookingList items={bookings} onDelete={deleteBooking} onUpdate={updateBooking} />
       </div>
 
       {/* 返回 */}
@@ -475,24 +483,22 @@ function BookingList({ items, onDelete, onUpdate }) {
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-800">
-                  <span className="font-medium">{b.restaurantName}</span>
-                  <span className="mx-2 text-gray-400">|</span>
-                  <span>{b.date}</span>
-                  <span className="mx-1">{b.time}</span>
-                  <span className="mx-2 text-gray-400">|</span>
-                  <span>{b.people} 位</span>
+              <div className="space-y-2">
+                <div className="font-medium text-gray-800">{b.restaurantName}</div>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600">
+                  <span>📅 {b.date}</span>
+                  <span>🕐 {b.time}</span>
+                  <span>👥 {b.people} 位</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between pt-1">
                   <span className="text-xs text-gray-400">建立於 {new Date(b.createdAt).toLocaleString()}</span>
                   {!isPast && (
-                    <div className="flex gap-2">
+                    <div className="flex gap-3">
                       <button onClick={() => handleStartEdit(b)} className="text-xs text-[#b22a2a] hover:underline">編輯</button>
                       <button onClick={() => onDelete(bookingId)} className="text-xs text-red-500 hover:underline">刪除</button>
                     </div>
                   )}
-                  {isPast && <span className="text-xs text-gray-400">已過期</span>}
+                  {isPast && <span className="text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded">已過期</span>}
                 </div>
               </div>
             )}

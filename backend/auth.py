@@ -23,7 +23,7 @@ ACCESS_MIN = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
 # 初始化 Firebase Admin SDK
 def init_firebase():
     """確保 Firebase 已初始化"""
-    try:
+try:
         # 檢查是否已初始化
         firebase_admin.get_app()
         return True
@@ -51,10 +51,10 @@ def init_firebase():
         # 方法2: 嘗試 JSON 環境變數
         firebase_cred_json = os.getenv("FIREBASE_CREDENTIALS")
         if firebase_cred_json:
-            try:
-                cred_dict = json.loads(firebase_cred_json)
-                cred = credentials.Certificate(cred_dict)
-                firebase_admin.initialize_app(cred)
+        try:
+            cred_dict = json.loads(firebase_cred_json)
+            cred = credentials.Certificate(cred_dict)
+            firebase_admin.initialize_app(cred)
                 print("✅ Firebase Admin SDK 已初始化（使用 JSON 環境變數）")
                 return True
             except json.JSONDecodeError as je:
@@ -78,8 +78,8 @@ def init_firebase():
         
         print("⚠️  未找到 Firebase 憑證")
         return False
-    except Exception as e:
-        print(f"⚠️  Firebase Admin SDK 初始化失敗: {e}")
+except Exception as e:
+    print(f"⚠️  Firebase Admin SDK 初始化失敗: {e}")
         return False
 
 # 嘗試初始化
